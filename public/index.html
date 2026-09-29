@@ -26,7 +26,7 @@
       --red: #ff234f;
       --text: #ffffff;
       --muted: #9ca3af;
-      --green: #008000;
+      --green: #00c853;
     }
 
     body {
@@ -391,6 +391,12 @@
     .buy-btn:hover {
       opacity: 0.95;
       transform: scale(1.02);
+    }
+
+    /* Estado selecionado do botão */
+    .buy-btn.selected {
+      background: linear-gradient(135deg, #008000, #00c853);
+      box-shadow: 0 6px 20px rgba(0,200,83,0.3);
     }
 
     /* Swiper Destaques */
@@ -784,9 +790,9 @@
         const linhas = csv.split('\n');
         const headers = linhas[0].split(',').map(h => h.trim().toLowerCase());
 
-        globalCatalog = linhas.slice(1).map(linha => {
+        globalCatalog = linhas.slice(1).map((linha, index) => {
           const valores = linha.split(',');
-          let obj = {};
+          let obj = { id: 'item_' + index }; // Cria um ID único por linha para controle seguro
           headers.forEach((header, i) => {
             obj[header] = valores[i] ? valores[i].trim() : '';
           });
@@ -806,14 +812,14 @@
     // Renderizar Destaques (Swiper)
     function renderBanner(data) {
       const wrapper = document.getElementById("bannerWrapper");
-      wrapper.innerHTML = data.slice(0, 15).map((item, index) => `
+      wrapper.innerHTML = data.slice(0, 15).map((item) => `
         <div class="swiper-slide">
           <div class="banner-card">
             <img src="${item.imagem || 'https://images.unsplash.com/photo-1489599849927-2ee91cede3ba'}" alt="${item.titulo}">
             <div class="banner-info">
               <div class="banner-title">${item.titulo}</div>
               <div class="banner-price">R$ ${item.preco || '0,00'}</div>
-              <button class="buy-btn" onclick="adicionarAoCarrinho(${index})">
+              <button class="buy-btn banner-btn-${item.id}" onclick="alternarCarrinho('${item.id}')">
                 <i class="fa-solid fa-cart-plus"></i> Adicionar
               </button>
             </div>
@@ -827,7 +833,7 @@
       const catalogGrid = document.getElementById('catalogGrid');
       catalogGrid.innerHTML = '';
 
-      data.forEach((item, index) => {
+      data.forEach((item) => {
         const categoria = item.categoria ? item.categoria.toLowerCase() : 'todos';
         const card = `
           <div class="card" data-categoria="${categoria}">
@@ -840,7 +846,7 @@
                   <span class="price">R$ ${item.preco || '0,00'}</span>
                 </div>
               </div>
-              <button class="buy-btn" onclick="adicionarAoCarrinho(${index})">
+              <button class="buy-btn grid-btn-${item.id}" onclick="alternarCarrinho('${item.id}')">
                 <i class="fa-solid fa-cart-plus"></i> Adicionar ao Carrinho
               </button>
             </div>
@@ -883,17 +889,44 @@
       });
     }
 
-    // Lógica do Carrinho e Desconto Progressivo
-    function adicionarAoCarrinho(index) {
-      const item = globalCatalog[index];
+    // Lógica inteligente de alternar (Adicionar ou Remover) para evitar duplicação e permitir remoção
+    function alternarCarrinho(itemId) {
+      const item = globalCatalog.find(prod => prod.id === itemId);
       if (!item) return;
 
-      carrinho.push(item);
-      atualizarCarrinhoUI();
+      const indexNoCarrinho = carrinho.findIndex(prod => prod.id === itemId);
 
-      // Feedback visual rápido no botão
-      const buttons = document.querySelectorAll(`.card:nth-child(${index+1}) .buy-btn, .banner-card .buy-btn`);
-      // Simples notificação visual de adição
+      if (indexNoCarrinho > -1) {
+        // Se já está no carrinho, remove
+        carrinho.splice(indexNoCarrinho, 1);
+      } else {
+        // Se não está, adiciona
+        carrinho.push(item);
+      }
+
+      atualizarCarrinhoUI();
+      atualizarBotoesNaTela(itemId);
+    }
+
+    // Atualiza o visual de todos os botões correspondentes a esse ID (tanto na grade quanto no banner)
+    function atualizarBotoesNaTela(itemId) {
+      const estaNoCarrinho = carrinho.some(prod => prod.id === itemId);
+      
+      const botoes = document.querySelectorAll(`.grid-btn-${itemId}, .banner-btn-${itemId}`);
+      botoes.forEach(btn => {
+        if (estaNoCarrinho) {
+          btn.classList.add('selected');
+          btn.innerHTML = `<i class="fa-solid fa-check"></i> Selecionado (Remover)`;
+        } else {
+          btn.classList.remove('selected');
+          // Descobre se é botão do banner ou do card para manter o texto adequado
+          if (btn.classList.contains('banner-card') || btn.closest('.banner-card')) {
+            btn.innerHTML = `<i class="fa-solid fa-cart-plus"></i> Adicionar`;
+          } else {
+            btn.innerHTML = `<i class="fa-solid fa-cart-plus"></i> Adicionar ao Carrinho`;
+          }
+        }
+      });
     }
 
     function atualizarCarrinhoUI() {
@@ -904,7 +937,7 @@
       if (carrinho.length > 0) {
         floatBar.classList.add('show');
         
-        let subtotal = carrinho.reduce((acc, item) => acc + Number(item.preco.replace(',', '.')), 0);
+        let subtotal = carrinho.reduce((acc, item) => acc + Number((item.preco || '0').replace(',', '.')), 0);
         let desconto = Math.max(0, carrinho.length - 1); // 1ª série normal, 2ª -R$1, 3ª -R$2...
         let totalFinal = Math.max(1, subtotal - desconto);
 
@@ -919,7 +952,6 @@
     async function abrirCheckoutPix() {
       if (carrinho.length === 0) return;
 
-      // Pega dados do Telegram se disponiveis ou gera mock padrão
       const urlParams = new URLSearchParams(window.location.search);
       const userTelegramId = urlParams.get('id') || '123456789';
       const userUsername = urlParams.get('username') || 'cliente_web';
@@ -945,7 +977,6 @@
           document.getElementById('qrCodeText').value = data.qrCodeCopyPaste;
           document.getElementById('pixModal').style.display = 'flex';
           
-          // Inicia verificação automática do status do pagamento
           iniciarVerificacaoPagamento(data.paymentId);
         } else {
           alert('Erro ao gerar Pix. Tente novamente.');
