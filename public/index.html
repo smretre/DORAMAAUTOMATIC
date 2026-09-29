@@ -3,111 +3,780 @@
 <head>
   <meta charset="UTF-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-  <title>Catálogo Premium</title>
-  <script src="https://telegram.org/js/telegram-web-app.js"></script>
+  <title>DORAMAX - Catálogo VIP</title>
   <link rel="preconnect" href="https://fonts.googleapis.com">
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
   <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&display=swap" rel="stylesheet">
   <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.1/css/all.min.css">
+  <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/swiper@11/swiper-bundle.min.css">
+  
   <style>
-    * { margin: 0; padding: 0; box-sizing: border-box; font-family: 'Inter', sans-serif; }
-    :root { --bg: #050816; --card: #10172d; --card2: #111c3b; --blue: #247cff; --red: #ff234f; --text: #ffffff; --muted: #9ca3af; --green: #22c55e; }
-    body { background: radial-gradient(circle at top right, rgba(36,124,255,0.15), transparent 20%), radial-gradient(circle at bottom left, rgba(255,35,79,0.12), transparent 25%), var(--bg); color: var(--text); overflow-x: hidden; padding-bottom: 90px; }
-    .container { width: 100%; max-width: 1400px; margin: auto; padding: 20px; }
-    .topbar { display: flex; align-items: center; justify-content: space-between; margin-bottom: 25px; gap: 15px; }
-    .logo { font-size: 30px; font-weight: 800; background: linear-gradient(90deg, var(--red), var(--blue)); -webkit-background-clip: text; -webkit-text-fill-color: transparent; flex: 1; }
-    .search-box { flex: 1; max-width: 450px; position: relative; margin-bottom: 25px; }
-    .search-icon { position: absolute; left: 18px; top: 50%; transform: translateY(-50%); color: rgba(255,255,255,0.5); z-index: 2; }
-    .search-box input { width: 100%; height: 52px; border-radius: 18px; border: 1px solid rgba(255,255,255,0.08); background: rgba(255,255,255,0.05); color: white; padding: 0 20px 0 50px; font-size: 15px; outline: none; }
-    .section-title { font-size: 28px; margin-bottom: 20px; font-weight: 800; }
-    .grid { display: grid; grid-template-columns: repeat(auto-fill, minmax(240px, 1fr)); gap: 22px; }
-    .card { background: linear-gradient(180deg, var(--card2), var(--card)); border-radius: 26px; overflow: hidden; position: relative; border: 1px solid rgba(255,255,255,0.06); box-shadow: 0 10px 30px rgba(0,0,0,0.25); }
-    .card-image { width: 100%; height: 300px; object-fit: cover; background: #0c1327; }
-    .badge { position: absolute; top: 15px; left: 15px; background: rgba(36,124,255,0.8); padding: 6px 10px; border-radius: 999px; font-size: 11px; font-weight: 700; z-index: 2; }
-    .card-content { padding: 18px; }
-    .card-title { font-size: 16px; font-weight: 700; margin-bottom: 8px; min-height: 40px; }
-    .price { font-size: 22px; font-weight: 800; color: #63a6ff; margin-bottom: 12px; }
-    .buy-btn { width: 100%; height: 45px; border-radius: 14px; border: none; cursor: pointer; color: white; font-size: 14px; font-weight: 700; background: #247cff; transition: 0.2s; }
-    .buy-btn.added { background: #008000; }
-    
-    /* Barra Fixa do Carrinho */
-    #cart-bar { position: fixed; bottom: 0; left: 0; right: 0; background: #111c3b; padding: 15px 25px; display: flex; justify-content: space-between; align-items: center; border-top: 1px solid rgba(255,255,255,0.1); z-index: 1000; backdrop-filter: blur(10px); }
-    #checkout-btn { background: #22c55e; color: #fff; border: none; padding: 12px 24px; border-radius: 12px; font-weight: bold; cursor: pointer; font-size: 15px; }
-    
-    /* Tela Modal do Pix (Estilo da imagem enviada) */
-    #pix-modal { display: none; position: fixed; inset: 0; background: rgba(5,8,22,0.95); z-index: 2000; padding: 20px; overflow-y: auto; text-align: center; }
-    .pix-content { max-width: 400px; margin: 30px auto; background: #111c3b; padding: 25px; border-radius: 24px; border: 1px solid rgba(255,255,255,0.1); }
-    .pix-content h2 { margin-bottom: 10px; font-size: 22px; }
-    .qr-code-img { width: 220px; height: 220px; background: white; padding: 10px; border-radius: 12px; margin: 15px auto; object-fit: contain; }
-    .copy-box { background: rgba(255,255,255,0.05); padding: 12px; border-radius: 12px; font-size: 11px; word-break: break-all; max-height: 80px; overflow-y: auto; margin-bottom: 15px; color: var(--muted); border: 1px solid rgba(255,255,255,0.08); }
-    .btn-pix { width: 100%; height: 48px; border-radius: 14px; border: none; font-weight: bold; cursor: pointer; font-size: 14px; margin-bottom: 10px; display: flex; align-items: center; justify-content: center; gap: 8px; color: #fff; }
-    .btn-copy { background: #7c3aed; }
-    .btn-paid { background: #22c55e; }
-    .btn-cancel { background: transparent; color: var(--muted); border: 1px solid rgba(255,255,255,0.2); }
-    .loading { text-align: center; padding: 40px; color: #9ca3af; }
+    * {
+      margin: 0;
+      padding: 0;
+      box-sizing: border-box;
+      font-family: 'Inter', sans-serif;
+    }
+
+    :root {
+      --bg: #050816;
+      --card: #10172d;
+      --card2: #111c3b;
+      --blue: #247cff;
+      --red: #ff234f;
+      --text: #ffffff;
+      --muted: #9ca3af;
+      --green: #008000;
+    }
+
+    body {
+      background: radial-gradient(circle at top right, rgba(36,124,255,0.15), transparent 20%),
+                  radial-gradient(circle at bottom left, rgba(255,35,79,0.12), transparent 25%),
+                  var(--bg);
+      color: var(--text);
+      overflow-x: hidden;
+      padding-bottom: 100px;
+    }
+
+    .container {
+      width: 100%;
+      max-width: 1400px;
+      margin: auto;
+      padding: 20px;
+    }
+
+    .topbar {
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      margin-bottom: 25px;
+      gap: 15px;
+    }
+
+    .menu-wrapper {
+      position: relative;
+    }
+
+    .top-menu-btn {
+      width: 60px;
+      height: 60px;
+      border: none;
+      border-radius: 20px;
+      background: rgba(255, 255, 255, 0.05);
+      border: 1px solid rgba(255, 255, 255, 0.08);
+      color: white;
+      font-size: 24px;
+      cursor: pointer;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      box-shadow: 0 10px 25px rgba(36,124,255,0.15);
+      transition: 0.2s;
+    }
+
+    .top-menu-btn:hover {
+      background: rgba(255, 255, 255, 0.1);
+    }
+
+    .menu-dropdown {
+      position: absolute;
+      top: 75px;
+      right: 0;
+      width: 240px;
+      background: #111c3b;
+      border-radius: 20px;
+      overflow: hidden;
+      display: none;
+      border: 1px solid rgba(255,255,255,0.08);
+      z-index: 9999;
+      backdrop-filter: blur(20px);
+      box-shadow: 0 15px 35px rgba(0,0,0,0.5);
+    }
+
+    .menu-dropdown a {
+      display: flex;
+      align-items: center;
+      gap: 12px;
+      padding: 16px 20px;
+      color: white;
+      text-decoration: none;
+      transition: 0.2s;
+      font-size: 15px;
+    }
+
+    .menu-dropdown a:hover {
+      background: rgba(255,255,255,0.05);
+    }
+
+    .logo {
+      font-size: 30px;
+      font-weight: 800;
+      background: linear-gradient(90deg, var(--red), var(--blue));
+      -webkit-background-clip: text;
+      -webkit-text-fill-color: transparent;
+      display: flex;
+      align-items: center;
+      gap: 10px;
+      flex: 1;
+    }
+
+    .search-box {
+      flex: 1;
+      max-width: 450px;
+      position: relative;
+    }
+
+    .search-icon {
+      position: absolute;
+      left: 18px;
+      top: 50%;
+      transform: translateY(-50%);
+      color: rgba(255,255,255,0.5);
+      font-size: 16px;
+      pointer-events: none;
+      z-index: 2;
+    }
+
+    .search-box input {
+      width: 100%;
+      height: 52px;
+      border-radius: 18px;
+      border: 1px solid rgba(255,255,255,0.08);
+      background: rgba(255,255,255,0.05);
+      color: white;
+      padding: 0 20px 0 50px;
+      font-size: 15px;
+      outline: none;
+      backdrop-filter: blur(12px);
+    }
+
+    .hero {
+      width: 100%;
+      min-height: 360px;
+      border-radius: 30px;
+      overflow: hidden;
+      position: relative;
+      margin-bottom: 30px;
+      background: linear-gradient(135deg, #09142d, #10172d);
+      display: flex;
+      align-items: center;
+      padding: 40px;
+      border: 1px solid rgba(255,255,255,0.08);
+    }
+
+    .hero::before {
+      content: '';
+      position: absolute;
+      width: 400px;
+      height: 400px;
+      background: radial-gradient(circle, rgba(255,35,79,0.3), transparent 70%);
+      top: -120px;
+      right: -120px;
+    }
+
+    .hero::after {
+      content: '';
+      position: absolute;
+      width: 400px;
+      height: 400px;
+      background: radial-gradient(circle, rgba(36,124,255,0.3), transparent 70%);
+      bottom: -150px;
+      left: -150px;
+    }
+
+    .hero-content {
+      position: relative;
+      z-index: 2;
+      max-width: 620px;
+    }
+
+    .tag {
+      background: linear-gradient(135deg, var(--blue), var(--red));
+      width: fit-content;
+      padding: 8px 16px;
+      border-radius: 999px;
+      font-size: 13px;
+      font-weight: 700;
+      margin-bottom: 18px;
+    }
+
+    .hero h1 {
+      font-size: 50px;
+      line-height: 1.05;
+      margin-bottom: 15px;
+    }
+
+    .hero p {
+      color: #c9d2e3;
+      font-size: 17px;
+      line-height: 1.7;
+      margin-bottom: 25px;
+    }
+
+    .hero-buttons {
+      display: flex;
+      gap: 15px;
+      flex-wrap: wrap;
+    }
+
+    .btn {
+      height: 52px;
+      padding: 0 26px;
+      border-radius: 16px;
+      border: none;
+      cursor: pointer;
+      color: white;
+      font-weight: 700;
+      text-decoration: none;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      transition: 0.25s ease;
+      position: relative;
+      overflow: hidden;
+    }
+
+    .btn-primary {
+      background: linear-gradient(135deg, var(--blue), #1a5bc9);
+      box-shadow: 0 10px 30px rgba(36,124,255,0.3);
+    }
+
+    .btn-secondary {
+      background: rgba(255, 255, 255, 0.08);
+      border: 1px solid rgba(255,255,255,0.12);
+    }
+
+    .btn:hover {
+      transform: translateY(-2px);
+    }
+
+    .categories {
+      display: flex;
+      gap: 12px;
+      overflow-x: auto;
+      padding-bottom: 10px;
+      margin-bottom: 28px;
+      scrollbar-width: none;
+    }
+
+    .categories::-webkit-scrollbar {
+      display: none;
+    }
+
+    .category {
+      min-width: fit-content;
+      padding: 12px 20px;
+      border-radius: 999px;
+      background: rgba(255,255,255,0.06);
+      border: 1px solid rgba(255,255,255,0.08);
+      cursor: pointer;
+      font-size: 14px;
+      font-weight: 500;
+      transition: 0.2s ease;
+      display: flex;
+      align-items: center;
+      gap: 8px;
+    }
+
+    .category.active,
+    .category:hover {
+      background: var(--blue);
+      border-color: var(--blue);
+      box-shadow: 0 5px 20px rgba(36,124,255,0.4);
+    }
+
+    .section-title {
+      font-size: 26px;
+      margin-bottom: 20px;
+      font-weight: 800;
+      display: flex;
+      align-items: center;
+      gap: 10px;
+    }
+
+    /* Grid de Produtos */
+    .grid {
+      display: grid;
+      grid-template-columns: repeat(auto-fill, minmax(240px, 1fr));
+      gap: 22px;
+    }
+
+    .card {
+      background: linear-gradient(180deg, var(--card2), var(--card));
+      border-radius: 26px;
+      overflow: hidden;
+      position: relative;
+      transition: 0.25s ease;
+      border: 1px solid rgba(255,255,255,0.06);
+      box-shadow: 0 10px 30px rgba(0,0,0,0.25);
+      display: flex;
+      flex-direction: column;
+    }
+
+    .card:hover {
+      transform: translateY(-6px);
+      border-color: rgba(36,124,255,0.3);
+    }
+
+    .card-image {
+      width: 100%;
+      height: 320px;
+      object-fit: cover;
+      background: #0c1327;
+    }
+
+    .badge {
+      position: absolute;
+      top: 15px;
+      left: 15px;
+      background: linear-gradient(135deg, var(--red), #d9143b);
+      padding: 6px 12px;
+      border-radius: 999px;
+      font-size: 11px;
+      font-weight: 700;
+      z-index: 2;
+      box-shadow: 0 4px 15px rgba(255,35,79,0.4);
+    }
+
+    .card-content {
+      padding: 18px;
+      display: flex;
+      flex-direction: column;
+      flex: 1;
+      justify-content: space-between;
+    }
+
+    .card-title {
+      font-size: 16px;
+      font-weight: 700;
+      margin-bottom: 10px;
+      line-height: 1.4;
+      display: -webkit-box;
+      -webkit-line-clamp: 2;
+      -webkit-box-orient: vertical;
+      overflow: hidden;
+    }
+
+    .price-row {
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      margin-bottom: 15px;
+    }
+
+    .price {
+      font-size: 22px;
+      font-weight: 800;
+      color: #63a6ff;
+    }
+
+    .buy-btn {
+      width: 100%;
+      height: 46px;
+      border-radius: 14px;
+      border: none;
+      cursor: pointer;
+      color: white;
+      font-size: 14px;
+      font-weight: 700;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      gap: 8px;
+      background: linear-gradient(135deg, var(--red), #d9143b);
+      box-shadow: 0 6px 20px rgba(255,35,79,0.3);
+      transition: 0.2s;
+    }
+
+    .buy-btn:hover {
+      opacity: 0.95;
+      transform: scale(1.02);
+    }
+
+    /* Swiper Destaques */
+    .destaqueSwiper {
+      width: 100%;
+      padding: 10px 0 35px;
+      margin-bottom: 20px;
+    }
+
+    .destaqueSwiper .swiper-slide {
+      width: 250px;
+      height: 380px;
+      border-radius: 22px;
+      overflow: hidden;
+      border: 1px solid rgba(255,255,255,0.08);
+    }
+
+    .banner-card {
+      position: relative;
+      width: 100%;
+      height: 100%;
+    }
+
+    .banner-card img {
+      width: 100%;
+      height: 100%;
+      object-fit: cover;
+    }
+
+    .banner-card::after {
+      content: "";
+      position: absolute;
+      inset: 0;
+      background: linear-gradient(to top, rgba(5,8,22,0.95), rgba(5,8,22,0.2), transparent);
+    }
+
+    .banner-info {
+      position: absolute;
+      bottom: 15px;
+      left: 15px;
+      right: 15px;
+      z-index: 5;
+    }
+
+    .banner-title {
+      font-size: 16px;
+      font-weight: 700;
+      margin-bottom: 6px;
+      white-space: nowrap;
+      overflow: hidden;
+      text-overflow: ellipsis;
+    }
+
+    .banner-price {
+      font-size: 18px;
+      font-weight: 800;
+      color: #63a6ff;
+      margin-bottom: 10px;
+    }
+
+    /* Barra de Carrinho Flutuante */
+    .cart-float-bar {
+      position: fixed;
+      bottom: 20px;
+      left: 50%;
+      transform: translateX(-50%) translateY(150px);
+      background: linear-gradient(135deg, #111c3b, #1b2a5c);
+      border: 1px solid rgba(36,124,255,0.4);
+      padding: 15px 25px;
+      border-radius: 25px;
+      box-shadow: 0 15px 40px rgba(0,0,0,0.6);
+      display: flex;
+      align-items: center;
+      gap: 25px;
+      z-index: 9998;
+      transition: transform 0.3s ease;
+      width: 90%;
+      max-width: 600px;
+      backdrop-filter: blur(20px);
+    }
+
+    .cart-float-bar.show {
+      transform: translateX(-50%) translateY(0);
+    }
+
+    .cart-info {
+      display: flex;
+      flex-direction: column;
+      flex: 1;
+    }
+
+    .cart-count {
+      font-size: 13px;
+      color: var(--muted);
+    }
+
+    .cart-total {
+      font-size: 18px;
+      font-weight: 800;
+      color: white;
+    }
+
+    .checkout-btn {
+      background: linear-gradient(135deg, #00c853, #64dd17);
+      color: #050816;
+      border: none;
+      padding: 12px 24px;
+      border-radius: 14px;
+      font-weight: 800;
+      cursor: pointer;
+      font-size: 15px;
+      box-shadow: 0 5px 20px rgba(0,200,83,0.4);
+      transition: 0.2s;
+    }
+
+    .checkout-btn:hover {
+      transform: scale(1.05);
+    }
+
+    /* Modal Checkout Pix */
+    .modal-overlay {
+      position: fixed;
+      inset: 0;
+      background: rgba(5, 8, 22, 0.85);
+      backdrop-filter: blur(10px);
+      z-index: 10000;
+      display: none;
+      align-items: center;
+      justify-content: center;
+      padding: 20px;
+    }
+
+    .modal-content {
+      background: #10172d;
+      border: 1px solid rgba(255,255,255,0.1);
+      width: 100%;
+      max-width: 450px;
+      border-radius: 30px;
+      padding: 30px;
+      text-align: center;
+      position: relative;
+      box-shadow: 0 20px 50px rgba(0,0,0,0.6);
+    }
+
+    .modal-close {
+      position: absolute;
+      top: 20px;
+      right: 20px;
+      background: rgba(255,255,255,0.08);
+      border: none;
+      color: white;
+      width: 36px;
+      height: 36px;
+      border-radius: 50%;
+      cursor: pointer;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      font-size: 16px;
+    }
+
+    .modal-title {
+      font-size: 22px;
+      font-weight: 800;
+      margin-bottom: 10px;
+    }
+
+    .qr-container {
+      background: white;
+      padding: 15px;
+      border-radius: 16px;
+      width: 200px;
+      height: 200px;
+      margin: 20px auto;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+    }
+
+    .qr-container img {
+      width: 100%;
+      height: 100%;
+    }
+
+    .copia-cola-input {
+      width: 100%;
+      background: rgba(255,255,255,0.05);
+      border: 1px solid rgba(255,255,255,0.1);
+      color: white;
+      padding: 12px;
+      border-radius: 12px;
+      font-size: 13px;
+      margin-bottom: 15px;
+      outline: none;
+      text-align: center;
+    }
+
+    .btn-copiar {
+      background: var(--blue);
+      color: white;
+      border: none;
+      width: 100%;
+      padding: 14px;
+      border-radius: 14px;
+      font-weight: 700;
+      cursor: pointer;
+      font-size: 15px;
+      box-shadow: 0 5px 20px rgba(36,124,255,0.3);
+    }
+
+    .status-pagamento {
+      margin-top: 15px;
+      font-size: 14px;
+      color: var(--muted);
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      gap: 8px;
+    }
+
+    .footer {
+      margin-top: 70px;
+      padding: 40px 20px;
+      border-top: 1px solid rgba(255,255,255,0.06);
+      text-align: center;
+      color: var(--muted);
+    }
+
+    .loading {
+      text-align: center;
+      padding: 60px 20px;
+      color: #9ca3af;
+      font-size: 18px;
+    }
+
+    @media (max-width: 768px) {
+      .hero {
+        padding: 30px;
+        min-height: auto;
+      }
+      .hero h1 {
+        font-size: 34px;
+      }
+      .grid {
+        grid-template-columns: repeat(2, 1fr);
+        gap: 14px;
+      }
+      .card-image {
+        height: 240px;
+      }
+    }
   </style>
 </head>
-<body>  
+<body>
+
   <div class="container">
     <div class="topbar">
-      <div class="logo"><i class="fa-solid fa-fire"></i> DORAMAX</div>
+      <div class="logo">
+        <i class="fa-solid fa-fire" style="color: var(--red);"></i>
+        DORAMAX
+      </div>
+
+      <div class="menu-wrapper">
+        <button class="top-menu-btn" onclick="toggleMenu()">
+          <i class="fa-solid fa-bars"></i>
+        </button>
+        <div class="menu-dropdown" id="menuDropdown">
+          <a href="https://t.me/doramaasmax" target="_blank">
+            <i class="fa-solid fa-users"></i> Entrar no Grupo
+          </a>
+          <a href="https://t.me/CatalogoMinidramasSeries" target="_blank">
+            <i class="fa-brands fa-telegram"></i> Entrar no Canal
+          </a>
+          <a href="#catalogo">
+            <i class="fa-solid fa-clapperboard"></i> Catálogo
+          </a>
+        </div>
+      </div>
     </div>
 
     <div class="search-box">
       <i class="fa-solid fa-magnifying-glass search-icon"></i>
-      <input type="text" id="searchInput" placeholder="Pesquisar conteúdo...">
+      <input type="text" id="searchInput" placeholder="Pesquisar série ou filme...">
+    </div>
+    
+    <!-- Swiper de Destaques -->
+    <div class="swiper destaqueSwiper">
+      <div class="swiper-wrapper" id="bannerWrapper"></div>
+      <div class="swiper-pagination"></div>
     </div>
 
-    <h2 class="section-title" id="catalogo">Catálogo Completo</h2>
-    <div class="loading" id="loading">Carregando catálogo da planilha...</div>
+    <section class="hero">
+      <div class="hero-content">
+        <div class="tag"><i class="fa-solid fa-gem"></i> VIP EXCLUSIVO</div>
+        <h1>CATÁLOGO PREMIUM</h1>
+        <p>
+          São mais de 10 mil doramas, minisséries e dramas dublados e legendados liberados em alta qualidade para você assistir quando quiser! <i class="fa-solid fa-sparkles"></i>
+        </p>
+        <div class="hero-buttons">
+          <a href="#catalogo" class="btn btn-primary"><i class="fa-solid fa-play"></i> EXPLORAR CATÁLOGO</a>
+          <a href="https://t.me/Postemix_bot?start=ofertas" target="_blank" class="btn btn-secondary"><i class="fa-solid fa-crown"></i> ASSINAR VIP</a>
+        </div>
+      </div>
+    </section>
+
+    <!-- Filtros de Categoria -->
+    <div class="categories" id="categoryContainer">
+      <div class="category active" data-cat="todos"><i class="fa-solid fa-layer-group"></i> Todos</div>
+      <div class="category" data-cat="top"><i class="fa-solid fa-fire"></i> Mais Vendidos</div>
+      <div class="category" data-cat="novos"><i class="fa-solid fa-star"></i> Novos</div>
+      <div class="category" data-cat="dublados"><i class="fa-solid fa-film"></i> Dublados</div>
+      <div class="category" data-cat="vip"><i class="fa-solid fa-gem"></i> VIP</div>
+      <div class="category" data-cat="series"><i class="fa-solid fa-tv"></i> Séries</div>
+      <div class="category" data-cat="filmes"><i class="fa-solid fa-clapperboard"></i> Filmes</div>
+    </div>
+
+    <h2 class="section-title" id="catalogo"><i class="fa-solid fa-clapperboard" style="color: var(--blue);"></i> Catálogo Completo</h2>
+
+    <div class="loading" id="loading">
+      <i class="fa-solid fa-spinner fa-spin"></i> Carregando catálogo...
+    </div>
+
     <div class="grid" id="catalogGrid"></div>
+
+    <p id="nada-encontrado" style="display:none; text-align: center; padding: 40px; color: var(--muted);">
+      Nenhum resultado encontrado.
+    </p>
+
+    <footer class="footer">
+      © 2026 - DORAMAX • Plataforma Premium de Minisséries e Doramas.
+    </footer>
   </div>
 
-  <!-- Barra do Carrinho Inferior -->
-  <div id="cart-bar">
-    <div>
-      🛒 <span id="cart-count">0</span> série(s) | Total: R$ <span id="cart-total">0.00</span>
+  <!-- Barra Flutuante do Carrinho -->
+  <div class="cart-float-bar" id="cartFloatBar">
+    <div class="cart-info">
+      <span class="cart-count" id="cartCount">0 série(s) selecionada(s)</span>
+      <span class="cart-total" id="cartTotal">R$ 0,00</span>
     </div>
-    <button id="checkout-btn" onclick="gerarPix()">Gerar PIX</button>
+    <button class="checkout-btn" onclick="abrirCheckoutPix()">
+      <i class="fa-solid fa-qrcode"></i> Pagar com Pix
+    </button>
   </div>
 
-  <!-- Tela Modal do Pix -->
-  <div id="pix-modal">
-    <div class="pix-content">
-      <h2>Pagar com PIX</h2>
-      <p id="pix-info-val" style="font-size: 14px; color: #63a6ff; margin-bottom: 10px;"></p>
+  <!-- Modal Pix -->
+  <div class="modal-overlay" id="pixModal">
+    <div class="modal-content">
+      <button class="modal-close" onclick="fecharModal()"><i class="fa-solid fa-xmark"></i></button>
+      <div class="modal-title">Pagamento via Pix</div>
+      <p style="color: var(--muted); font-size: 14px; margin-bottom: 10px;">Escaneie o QR Code abaixo com o app do seu banco:</p>
       
-      <img id="pix-qr" class="qr-code-img" src="" alt="QR Code Pix">
+      <div class="qr-container">
+        <img id="qrCodeImg" src="" alt="QR Code Pix">
+      </div>
+
+      <input type="text" class="copia-cola-input" id="qrCodeText" readonly onclick="this.select()">
+      <button class="btn-copiar" onclick="copiarPix()"><i class="fa-regular fa-copy"></i> Copiar Código Pix</button>
       
-      <div class="copy-box" id="pix-copypaste"></div>
-      
-      <button class="btn-pix btn-copy" onclick="copiarCodigoPix()">
-        <i class="fa-solid fa-copy"></i> Copiar código PIX
-      </button>
-      
-      <p style="font-size: 11px; color: var(--muted); margin-bottom: 15px;">Após pagar no app do banco, toque no botão abaixo</p>
-      
-      <button id="btn-ja-paguei" class="btn-pix btn-paid" onclick="verificarPagamento()">
-        ✓ Já Paguei
-      </button>
-      
-      <button class="btn-pix btn-cancel" onclick="fecharModalPix()">
-        Cancelar
-      </button>
+      <div class="status-pagamento" id="statusPagamento">
+        <i class="fa-solid fa-spinner fa-spin"></i> Aguardando confirmação do pagamento...
+      </div>
     </div>
   </div>
 
+  <script src="https://cdn.jsdelivr.net/npm/swiper@11/swiper-bundle.min.js"></script>
   <script>
-    const tg = window.Telegram.WebApp;
-    tg.expand();
-
-    let catalogData = [];
-    let cart = [];
-    let currentPaymentId = null;
-    let checkInterval = null;
-
+    // URL da Planilha Google Sheets (CSV)
     const API_URL = 'https://docs.google.com/spreadsheets/d/e/2PACX-1vTGeP0x7xeK7nHej7VxXBaM8OkFocnEjkH04IDrP0dzgoBVENtAtL1zSoQn_Z4sIhcBl0Bx5mIK3y8m/pub?output=csv';
 
+    let globalCatalog = [];
+    let carrinho = [];
+    let checkInterval = null;
+
+    // Menu Lateral Toggle
+    function toggleMenu() {
+      const menu = document.getElementById('menuDropdown');
+      menu.style.display = (menu.style.display === 'block') ? 'none' : 'block';
+    }
+
+    window.addEventListener('click', function(e) {
+      if (!e.target.closest('.menu-wrapper')) {
+        document.getElementById('menuDropdown').style.display = 'none';
+      }
+    });
+
+    // Carregar Dados da Planilha
     async function loadCatalog() {
       try {
         const response = await fetch(API_URL);
@@ -115,155 +784,255 @@
         const linhas = csv.split('\n');
         const headers = linhas[0].split(',').map(h => h.trim().toLowerCase());
 
-        catalogData = linhas.slice(1).map((linha, index) => {
+        globalCatalog = linhas.slice(1).map(linha => {
           const valores = linha.split(',');
-          let obj = { id: String(index) };
+          let obj = {};
           headers.forEach((header, i) => {
-            obj[header] = valores[i]?.trim();
+            obj[header] = valores[i] ? valores[i].trim() : '';
           });
           return obj;
         }).filter(item => item.titulo);
 
-        renderCatalog(catalogData);
-      } catch(error) {
+        renderBanner(globalCatalog);
+        renderCatalog(globalCatalog);
+        initSwiper();
+
+      } catch (error) {
         console.error(error);
         document.getElementById('loading').innerHTML = 'Erro ao carregar catálogo.';
       }
     }
 
+    // Renderizar Destaques (Swiper)
+    function renderBanner(data) {
+      const wrapper = document.getElementById("bannerWrapper");
+      wrapper.innerHTML = data.slice(0, 15).map((item, index) => `
+        <div class="swiper-slide">
+          <div class="banner-card">
+            <img src="${item.imagem || 'https://images.unsplash.com/photo-1489599849927-2ee91cede3ba'}" alt="${item.titulo}">
+            <div class="banner-info">
+              <div class="banner-title">${item.titulo}</div>
+              <div class="banner-price">R$ ${item.preco || '0,00'}</div>
+              <button class="buy-btn" onclick="adicionarAoCarrinho(${index})">
+                <i class="fa-solid fa-cart-plus"></i> Adicionar
+              </button>
+            </div>
+          </div>
+        </div>
+      `).join('');
+    }
+
+    // Renderizar Grade Principal
     function renderCatalog(data) {
-      const grid = document.getElementById('catalogGrid');
-      grid.innerHTML = '';
+      const catalogGrid = document.getElementById('catalogGrid');
+      catalogGrid.innerHTML = '';
 
-      data.forEach(item => {
-        const precoLimpo = item.preco ? item.preco.replace(',', '.') : '6.00';
-        const noCarrinho = cart.some(c => c.id === item.id);
-
-        grid.innerHTML += `
-          <div class="card">
+      data.forEach((item, index) => {
+        const categoria = item.categoria ? item.categoria.toLowerCase() : 'todos';
+        const card = `
+          <div class="card" data-categoria="${categoria}">
             <div class="badge">VIP</div>
-            <img class="card-image" src="${item.imagem}" alt="${item.titulo}">
+            <img class="card-image" src="${item.imagem || 'https://images.unsplash.com/photo-1489599849927-2ee91cede3ba'}" alt="${item.titulo}">
             <div class="card-content">
-              <div class="card-title">${item.titulo}</div>
-              <div class="price">R$ ${Number(precoLimpo).toFixed(2)}</div>
-              <button class="buy-btn ${noCarrinho ? 'added' : ''}" onclick="alternarCarrinho('${item.id}')">
-                ${noCarrinho ? 'Remover' : 'Adicionar ao Carrinho'}
+              <div>
+                <div class="card-title">${item.titulo}</div>
+                <div class="price-row">
+                  <span class="price">R$ ${item.preco || '0,00'}</span>
+                </div>
+              </div>
+              <button class="buy-btn" onclick="adicionarAoCarrinho(${index})">
+                <i class="fa-solid fa-cart-plus"></i> Adicionar ao Carrinho
               </button>
             </div>
           </div>
         `;
+        catalogGrid.innerHTML += card;
       });
+
       document.getElementById('loading').style.display = 'none';
     }
 
-    function alternarCarrinho(id) {
-      const index = cart.findIndex(c => c.id === id);
-      if (index > -1) {
-        cart.splice(index, 1);
+    // Inicializar Swiper
+    function initSwiper() {
+      new Swiper(".destaqueSwiper", {
+        effect: "coverflow",
+        grabCursor: true,
+        centeredSlides: true,
+        loop: true,
+        slidesPerView: 1.3,
+        breakpoints: {
+          768: { slidesPerView: 2.5 },
+          1024: { slidesPerView: 3.5 },
+          1400: { slidesPerView: 4.5 }
+        },
+        autoplay: {
+          delay: 3500,
+          disableOnInteraction: false
+        },
+        coverflowEffect: {
+          rotate: 0,
+          stretch: 0,
+          depth: 100,
+          modifier: 2,
+          scale: 0.9
+        },
+        pagination: {
+          el: ".swiper-pagination",
+          clickable: true
+        }
+      });
+    }
+
+    // Lógica do Carrinho e Desconto Progressivo
+    function adicionarAoCarrinho(index) {
+      const item = globalCatalog[index];
+      if (!item) return;
+
+      carrinho.push(item);
+      atualizarCarrinhoUI();
+
+      // Feedback visual rápido no botão
+      const buttons = document.querySelectorAll(`.card:nth-child(${index+1}) .buy-btn, .banner-card .buy-btn`);
+      // Simples notificação visual de adição
+    }
+
+    function atualizarCarrinhoUI() {
+      const floatBar = document.getElementById('cartFloatBar');
+      const cartCount = document.getElementById('cartCount');
+      const cartTotal = document.getElementById('cartTotal');
+
+      if (carrinho.length > 0) {
+        floatBar.classList.add('show');
+        
+        let subtotal = carrinho.reduce((acc, item) => acc + Number(item.preco.replace(',', '.')), 0);
+        let desconto = Math.max(0, carrinho.length - 1); // 1ª série normal, 2ª -R$1, 3ª -R$2...
+        let totalFinal = Math.max(1, subtotal - desconto);
+
+        cartCount.innerText = `${carrinho.length} série(s) selecionada(s)${desconto > 0 ? ` (Desconto de R$ ${desconto},00)` : ''}`;
+        cartTotal.innerText = `R$ ${totalFinal.toFixed(2).replace('.', ',')}`;
       } else {
-        const item = catalogData.find(i => i.id === id);
-        if (item) cart.push(item);
+        floatBar.classList.remove('show');
       }
-      renderCatalog(catalogData);
-      atualizarCarrinhoBarra();
     }
 
-    function atualizarCarrinhoBarra() {
-      document.getElementById('cart-count').innerText = cart.length;
-      let subtotal = cart.reduce((acc, item) => acc + parseFloat(item.preco?.replace(',', '.') || 6.00), 0);
-      let desconto = Math.max(0, cart.length - 1);
-      let totalFinal = Math.max(1, subtotal - desconto);
-      document.getElementById('cart-total').innerText = totalFinal.toFixed(2);
-    }
+    // Gerar Pix no Backend
+    async function abrirCheckoutPix() {
+      if (carrinho.length === 0) return;
 
-    async function gerarPix() {
-      if (cart.length === 0) {
-        alert('Selecione pelo menos uma série no carrinho!');
-        return;
-      }
+      // Pega dados do Telegram se disponiveis ou gera mock padrão
+      const urlParams = new URLSearchParams(window.location.search);
+      const userTelegramId = urlParams.get('id') || '123456789';
+      const userUsername = urlParams.get('username') || 'cliente_web';
 
-      const user = tg.initDataUnsafe?.user || { id: 12345, username: 'usuario_teste' };
-
-      // Altera o botão temporariamente para gerando
-      const btnCheckout = document.getElementById('checkout-btn');
-      btnCheckout.innerText = 'Gerando PIX...';
-      btnCheckout.disabled = true;
+      const checkoutBtn = document.querySelector('.checkout-btn');
+      checkoutBtn.innerHTML = '<i class="fa-solid fa-spinner fa-spin"></i> Gerando Pix...';
 
       try {
         const response = await fetch('/api/checkout-pix', {
           method: 'POST',
           headers: { 'Content-Type': 'application/json' },
-          body: JSON.stringify({ items: cart, userTelegramId: user.id, userUsername: user.username })
+          body: JSON.stringify({
+            items: carrinho,
+            userTelegramId: userTelegramId,
+            userUsername: userUsername
+          })
         });
 
         const data = await response.json();
+
         if (data.qrCodeBase64) {
-          currentPaymentId = data.paymentId;
-          document.getElementById('pix-qr').src = `data:image/png;base64,${data.qrCodeBase64}`;
-          document.getElementById('pix-copypaste').innerText = data.qrCodeCopyPaste;
-          document.getElementById('pix-info-val').innerText = `Carrinho (${cart.length} itens) — R$ ${data.totalFinal}`;
-          document.getElementById('pix-modal').style.display = 'block';
+          document.getElementById('qrCodeImg').src = `data:image/png;base64,${data.qrCodeBase64}`;
+          document.getElementById('qrCodeText').value = data.qrCodeCopyPaste;
+          document.getElementById('pixModal').style.display = 'flex';
+          
+          // Inicia verificação automática do status do pagamento
+          iniciarVerificacaoPagamento(data.paymentId);
         } else {
-          alert('Erro ao gerar o Pix.');
+          alert('Erro ao gerar Pix. Tente novamente.');
         }
-      } catch (e) {
-        alert('Erro de conexão ao gerar Pix.');
+      } catch (err) {
+        console.error(err);
+        alert('Erro de conexão ao gerar pagamento.');
       } finally {
-        btnCheckout.innerText = 'Gerar PIX';
-        btnCheckout.disabled = false;
+        checkoutBtn.innerHTML = '<i class="fa-solid fa-qrcode"></i> Pagar com Pix';
       }
     }
 
-    function copiarCodigoPix() {
-      const texto = document.getElementById('pix-copypaste').innerText;
-      navigator.clipboard.writeText(texto);
-      alert('Código Pix Copia e Cola copiado com sucesso!');
-    }
-
-    async function verificarPagamento() {
-      if (!currentPaymentId) return;
-
-      const btn = document.getElementById('btn-ja-paguei');
-      btn.innerText = 'Aguardando pagamento... ⏳';
-      btn.disabled = true;
-
-      // Faz uma verificação imediata e depois checa a cada 4 segundos
-      checarStatusNaApi();
-      checkInterval = setInterval(checarStatusNaApi, 4000);
-    }
-
-    async function checarStatusNaApi() {
-      try {
-        const res = await fetch(`/api/check-payment/${currentPaymentId}`);
-        const data = await res.json();
-
-        if (data.status === 'approved') {
-          clearInterval(checkInterval);
-          alert('Pagamento Aprovado com Sucesso!');
-          window.location.reload();
-        }
-      } catch (e) {
-        console.error('Erro ao verificar status');
-      }
-    }
-
-    function fecharModalPix() {
+    function iniciarVerificacaoPagamento(paymentId) {
       if (checkInterval) clearInterval(checkInterval);
-      document.getElementById('pix-modal').style.display = 'none';
-      const btn = document.getElementById('btn-ja-paguei');
-      btn.innerText = '✓ Já Paguei';
-      btn.disabled = false;
+
+      checkInterval = setInterval(async () => {
+        try {
+          const res = await fetch(`/api/check-payment/${paymentId}`);
+          const data = await res.json();
+
+          if (data.status === 'approved') {
+            clearInterval(checkInterval);
+            document.getElementById('statusPagamento').innerHTML = '<i class="fa-solid fa-circle-check" style="color: #00c853;"></i> Pagamento Aprovado com Sucesso!';
+            setTimeout(() => {
+              alert('Pagamento aprovado! Suas séries foram liberadas no seu Telegram.');
+              window.location.reload();
+            }, 2000);
+          }
+        } catch (e) {
+          console.error('Erro ao verificar status:', e);
+        }
+      }, 4000);
     }
 
-    // Pesquisa simples
-    document.getElementById('searchInput').addEventListener('input', (e) => {
-      const termo = e.target.value.toLowerCase();
-      document.querySelectorAll('.card').forEach(card => {
-        const titulo = card.querySelector('.card-title').textContent.toLowerCase();
-        card.style.display = titulo.includes(termo) ? 'block' : 'none';
+    function fecharModal() {
+      document.getElementById('pixModal').style.display = 'none';
+      if (checkInterval) clearInterval(checkInterval);
+    }
+
+    function copiarPix() {
+      const input = document.getElementById('qrCodeText');
+      input.select();
+      navigator.clipboard.writeText(input.value);
+      alert('Código Pix Copiado com sucesso!');
+    }
+
+    // Filtros por Categoria
+    document.querySelectorAll('.category').forEach(cat => {
+      cat.addEventListener('click', () => {
+        document.querySelectorAll('.category').forEach(c => c.classList.remove('active'));
+        cat.classList.add('active');
+
+        const categoria = cat.dataset.cat;
+        document.querySelectorAll('.card').forEach(card => {
+          const cardCat = card.dataset.categoria;
+          if (categoria === 'todos' || cardCat === categoria || (categoria === 'top' && cardCat.includes('top'))) {
+            card.style.display = 'flex';
+          } else {
+            card.style.display = 'none';
+          }
+        });
       });
     });
 
+    // Pesquisa em Tempo Real
+    const searchInput = document.getElementById('searchInput');
+    const nadaEncontrado = document.getElementById('nada-encontrado');
+
+    searchInput.addEventListener('input', () => {
+      const termo = searchInput.value.toLowerCase();
+      const cards = document.querySelectorAll('.card');
+      let encontrou = false;
+
+      cards.forEach(card => {
+        const title = card.querySelector('.card-title').textContent.toLowerCase();
+        if (title.includes(termo)) {
+          card.style.display = 'flex';
+          encontrou = true;
+        } else {
+          card.style.display = 'none';
+        }
+      });
+
+      nadaEncontrado.style.display = encontrou ? 'none' : 'block';
+    });
+
+    // Inicialização
     loadCatalog();
   </script>
 </body>
