@@ -12,7 +12,9 @@ const MERCADO_PAGO_ACCESS_TOKEN = process.env.MERCADO_PAGO_ACCESS_TOKEN;
 const SELLER_CHAT_ID = process.env.SELLER_CHAT_ID;
 const APP_URL = process.env.RENDER_EXTERNAL_URL || `http://localhost:${process.env.PORT || 3000}`;
 
-// Rota para Gerar o Pix Direto no Mercado Pago
+// Banco de dados temporário em memória para guardar os carrinhos por ID de pagamento
+const pendingOrders = {};
+
 app.post('/api/checkout-pix', async (req, res) => {
     try {
         const { items, userTelegramId, userUsername } = req.body;
@@ -26,7 +28,9 @@ app.post('/api/checkout-pix', async (req, res) => {
         let desconto = Math.max(0, items.length - 1); 
         let totalFinal = Math.max(1, subtotal - desconto); 
 
-        // Dados para a API de Pagamentos do Mercado Pago (Pix)
+        // Criação de uma referência curta para não estourar o limite do Mercado Pago
+        const orderKey = `order_${userTelegramId}_${Date.now()}`;
+
         const paymentData = {
             transaction_amount: Number(totalFinal.toFixed(2)),
             description: `Pacote com ${items.length} Série(s) - DORAMAX`,
@@ -35,21 +39,29 @@ app.post('/api/checkout-pix', async (req, res) => {
                 email: `usuario_${userTelegramId}@telegram.com`,
                 first_name: userUsername || 'Cliente'
             },
-            external_reference: JSON.stringify({ userTelegramId, userUsername, items })
+            external_reference: orderKey
         };
 
         const mpResponse = await axios.post('https://api.mercadopago.com/v1/payments', paymentData, {
             headers: {
                 'Authorization': `Bearer ${MERCADO_PAGO_ACCESS_TOKEN}`,
                 'Content-Type': 'application/json',
-                'X-Idempotency-Key': `${userTelegramId}-${Date.now()}`
+                'X-Idempotency-Key': orderKey
             }
         });
+
+        const paymentId = mpResponse.data.id;
+
+        // Salva os itens na memória do servidor vinculados ao ID do pagamento
+        pendingOrders[paymentId] = {
+            userTelegramId,
+            userUsername,
+            items
+        };
 
         const pointOfInteraction = mpResponse.data.point_of_interaction;
         const qrCodeBase64 = pointOfInteraction?.transaction_data?.qr_code_base64;
         const qrCodeCopyPaste = pointOfInteraction?.transaction_data?.qr_code;
-        const paymentId = mpResponse.data.id;
 
         res.json({
             paymentId,
@@ -64,7 +76,6 @@ app.post('/api/checkout-pix', async (req, res) => {
     }
 });
 
-// Rota para verificar o status do pagamento quando o usuário clica em "Já Paguei"
 app.get('/api/check-payment/:id', async (req, res) => {
     try {
         const paymentId = req.params.id;
@@ -72,25 +83,31 @@ app.get('/api/check-payment/:id', async (req, res) => {
             headers: { 'Authorization': `Bearer ${MERCADO_PAGO_ACCESS_TOKEN}` }
         });
 
-        const status = paymentInfo.data.status; // approved, pending, etc.
+        const status = paymentInfo.data.status;
 
         if (status === 'approved') {
-            const metadata = JSON.parse(paymentInfo.data.external_reference || '{}');
-            const { userTelegramId, userUsername, items } = metadata;
-            const listaSeries = items.map(i => `- ${i.titulo} (R$ ${i.preco})`).join('\n');
+            const orderData = pendingOrders[paymentId];
+            
+            if (orderData) {
+                const { userTelegramId, userUsername, items } = orderData;
+                const listaSeries = items.map(i => `- ${i.titulo} (R$ ${i.preco})`).join('\n');
 
-            // 1. Envia instruções de acesso para o CLIENTE no Telegram
-            await axios.post(`https://api.telegram.org/bot${TELEGRAM_BOT_TOKEN}/sendMessage`, {
-                chat_id: userTelegramId,
-                text: `🎉 **Pagamento Aprovado com Sucesso!**\n\nAqui estão os itens do seu pedido:\n\n${listaSeries}\n\n👉 Suas instruções de acesso e episódios foram liberados. Obrigado por comprar conosco!`
-            });
-
-            // 2. Envia notificação no PV do VENDEDOR
-            if (SELLER_CHAT_ID) {
+                // 1. Envia instruções de acesso para o CLIENTE no Telegram
                 await axios.post(`https://api.telegram.org/bot${TELEGRAM_BOT_TOKEN}/sendMessage`, {
-                    chat_id: SELLER_CHAT_ID,
-                    text: `🔔 **Nova Venda Aprovada!**\n\n👤 Cliente: @${userUsername || 'Sem username'} (ID: ${userTelegramId})\n\n📺 **Séries escolhidas:**\n${listaSeries}\n\n💰 Valor pago: R$ ${paymentInfo.data.transaction_amount}`
+                    chat_id: userTelegramId,
+                    text: `🎉 **Pagamento Aprovado com Sucesso!**\n\nAqui estão os itens do seu pedido:\n\n${listaSeries}\n\n👉 Suas instruções de acesso e episódios foram liberados. Obrigado por comprar conosco!`
                 });
+
+                // 2. Envia notificação no PV do VENDEDOR
+                if (SELLER_CHAT_ID) {
+                    await axios.post(`https://api.telegram.org/bot${TELEGRAM_BOT_TOKEN}/sendMessage`, {
+                        chat_id: SELLER_CHAT_ID,
+                        text: `🔔 **Nova Venda Aprovada!**\n\n👤 Cliente: @${userUsername || 'Sem username'} (ID: ${userTelegramId})\n\n📺 **Séries escolhidas:**\n${listaSeries}\n\n💰 Valor pago: R$ ${paymentInfo.data.transaction_amount}`
+                    });
+                }
+
+                // Remove da memória após aprovado
+                delete pendingOrders[paymentId];
             }
         }
 
@@ -101,7 +118,6 @@ app.get('/api/check-payment/:id', async (req, res) => {
     }
 });
 
-// Webhook padrão do Telegram para o /start com botão do Mini App
 app.post('/api/telegram-webhook', async (req, res) => {
     try {
         const update = req.body;
