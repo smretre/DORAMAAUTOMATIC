@@ -950,40 +950,44 @@
 
     // Gerar Pix no Backend
     async function abrirCheckoutPix() {
-      if (cart.length === 0) {
-        alert('Selecione pelo menos uma série no carrinho!');
-        return;
-      }
+      if (carrinho.length === 0) return;
 
-      const user = tg.initDataUnsafe?.user || { id: 12345, username: 'usuario_teste' };
+      // Pega dados do Telegram se disponiveis ou gera mock padrão
+      const urlParams = new URLSearchParams(window.location.search);
+      const userTelegramId = urlParams.get('id') || '123456789';
+      const userUsername = urlParams.get('username') || 'cliente_web';
 
-      // Altera o botão temporariamente para gerando
-      const btnCheckout = document.getElementById('checkout-btn');
-      btnCheckout.innerText = 'Gerando PIX...';
-      btnCheckout.disabled = true;
+      const checkoutBtn = document.querySelector('.checkout-btn');
+      checkoutBtn.innerHTML = '<i class="fa-solid fa-spinner fa-spin"></i> Gerando Pix...';
 
       try {
         const response = await fetch('/api/checkout-pix', {
           method: 'POST',
           headers: { 'Content-Type': 'application/json' },
-          body: JSON.stringify({ items: cart, userTelegramId: user.id, userUsername: user.username })
+          body: JSON.stringify({
+            items: carrinho,
+            userTelegramId: userTelegramId,
+            userUsername: userUsername
+          })
         });
 
         const data = await response.json();
+
         if (data.qrCodeBase64) {
-          currentPaymentId = data.paymentId;
-          document.getElementById('pix-qr').src = `data:image/png;base64,${data.qrCodeBase64}`;
-          document.getElementById('pix-copypaste').innerText = data.qrCodeCopyPaste;
-          document.getElementById('pix-info-val').innerText = `Carrinho (${cart.length} itens) — R$ ${data.totalFinal}`;
-          document.getElementById('pix-modal').style.display = 'block';
+          document.getElementById('qrCodeImg').src = `data:image/png;base64,${data.qrCodeBase64}`;
+          document.getElementById('qrCodeText').value = data.qrCodeCopyPaste;
+          document.getElementById('pixModal').style.display = 'flex';
+          
+          // Inicia verificação automática do status do pagamento
+          iniciarVerificacaoPagamento(data.paymentId);
         } else {
-          alert('Erro ao gerar o Pix.');
+          alert('Erro ao gerar Pix. Tente novamente.');
         }
-      } catch (e) {
-        alert('Erro de conexão ao gerar Pix.');
+      } catch (err) {
+        console.error(err);
+        alert('Erro de conexão ao gerar pagamento.');
       } finally {
-        btnCheckout.innerText = 'Gerar PIX';
-        btnCheckout.disabled = false;
+        checkoutBtn.innerHTML = '<i class="fa-solid fa-qrcode"></i> Pagar com Pix';
       }
     }
     
