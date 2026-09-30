@@ -952,13 +952,28 @@
     async function abrirCheckoutPix() {
       if (carrinho.length === 0) return;
 
-      // Captura o utilizador do Telegram nativo ou recorre à URL/padrão
-      const tgUser = window.Telegram.WebApp && window.Telegram.WebApp.initDataUnsafe ? window.Telegram.WebApp.initDataUnsafe.user : null;
-      const urlParams = new URLSearchParams(window.location.search);
-      const userTelegramId = tgUser?.id || urlParams.get('id') || '123456789';
-      const userUsername = tgUser?.username || tgUser?.first_name || urlParams.get('username') || 'cliente_web';
+      // Forma tradicional e segura (compatível com qualquer navegador)
+      let tgUser = null;
+      if (window.Telegram && window.Telegram.WebApp && window.Telegram.WebApp.initDataUnsafe) {
+        tgUser = window.Telegram.WebApp.initDataUnsafe.user;
+      }
 
-      // Mantém a forma original que funcionava para encontrar o botão pela classe
+      const urlParams = new URLSearchParams(window.location.search);
+      
+      let userTelegramId = '123456789';
+      if (tgUser && tgUser.id) {
+        userTelegramId = tgUser.id;
+      } else if (urlParams.get('id')) {
+        userTelegramId = urlParams.get('id');
+      }
+
+      let userUsername = 'cliente_web';
+      if (tgUser && (tgUser.username || tgUser.first_name)) {
+        userUsername = tgUser.username || tgUser.first_name;
+      } else if (urlParams.get('username')) {
+        userUsername = urlParams.get('username');
+      }
+
       const checkoutBtn = document.querySelector('.checkout-btn');
       if (checkoutBtn) {
         checkoutBtn.innerHTML = '<i class="fa-solid fa-spinner fa-spin"></i> Gerando Pix...';
