@@ -763,6 +763,20 @@
 
   <script src="https://cdn.jsdelivr.net/npm/swiper@11/swiper-bundle.min.js"></script>
   <script>
+    let userTelegramId = '';
+    let userUsername = '';
+
+    // Tenta apanhar os dados diretamente do Telegram Web App nativo
+    if (window.Telegram && window.Telegram.WebApp && window.Telegram.WebApp.initDataUnsafe && window.Telegram.WebApp.initDataUnsafe.user) {
+        const tgUser = window.Telegram.WebApp.initDataUnsafe.user;
+        userTelegramId = tgUser.id;
+        userUsername = tgUser.username || tgUser.first_name;
+    } else {
+        // Fallback caso abram fora do Telegram
+        const urlParams = new URLSearchParams(window.location.search);
+        userTelegramId = urlParams.get('id') || '123456789';
+        userUsername = urlParams.get('username') || 'cliente_web';
+    }
     // URL da Planilha Google Sheets (CSV)
     const API_URL = 'https://docs.google.com/spreadsheets/d/e/2PACX-1vTGeP0x7xeK7nHej7VxXBaM8OkFocnEjkH04IDrP0dzgoBVENtAtL1zSoQn_Z4sIhcBl0Bx5mIK3y8m/pub?output=csv';
 
