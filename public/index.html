@@ -950,39 +950,26 @@
 
     // Gerar Pix no Backend
     async function gerarPix() {
-      alert("Botão clicado com sucesso!"); // Teste visual para ver se o clique responde
-
       if (cart.length === 0) {
         alert('Selecione pelo menos uma série no carrinho!');
         return;
       }
 
-      const user = (window.Telegram && window.Telegram.WebApp && window.Telegram.WebApp.initDataUnsafe && window.Telegram.WebApp.initDataUnsafe.user) 
-                    ? window.Telegram.WebApp.initDataUnsafe.user 
-                    : { id: '123456789', username: 'cliente_web', first_name: 'Cliente' };
+      const user = tg.initDataUnsafe?.user || { id: 12345, username: 'usuario_teste' };
 
-      const userTelegramId = user.id || '123456789';
-      const userUsername = user.username || user.first_name || 'cliente_web';
-
+      // Altera o botão temporariamente para gerando
       const btnCheckout = document.getElementById('checkout-btn');
-      if (btnCheckout) {
-        btnCheckout.innerText = 'Gerando PIX...';
-        btnCheckout.disabled = true;
-      }
+      btnCheckout.innerText = 'Gerando PIX...';
+      btnCheckout.disabled = true;
 
       try {
         const response = await fetch('/api/checkout-pix', {
           method: 'POST',
           headers: { 'Content-Type': 'application/json' },
-          body: JSON.stringify({ 
-            items: cart, 
-            userTelegramId: userTelegramId, 
-            userUsername: userUsername 
-          })
+          body: JSON.stringify({ items: cart, userTelegramId: user.id, userUsername: user.username })
         });
 
         const data = await response.json();
-        
         if (data.qrCodeBase64) {
           currentPaymentId = data.paymentId;
           document.getElementById('pix-qr').src = `data:image/png;base64,${data.qrCodeBase64}`;
@@ -990,18 +977,16 @@
           document.getElementById('pix-info-val').innerText = `Carrinho (${cart.length} itens) — R$ ${data.totalFinal}`;
           document.getElementById('pix-modal').style.display = 'block';
         } else {
-          alert('Erro ao gerar o Pix retornado pela API.');
+          alert('Erro ao gerar o Pix.');
         }
       } catch (e) {
-        alert('Erro de conexão ao gerar Pix: ' + e.message);
+        alert('Erro de conexão ao gerar Pix.');
       } finally {
-        if (btnCheckout) {
-          btnCheckout.innerText = 'Gerar PIX';
-          btnCheckout.disabled = false;
-        }
+        btnCheckout.innerText = 'Gerar PIX';
+        btnCheckout.disabled = false;
       }
     }
-
+    
     function iniciarVerificacaoPagamento(paymentId) {
       if (checkInterval) clearInterval(checkInterval);
 
