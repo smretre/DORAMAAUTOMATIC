@@ -118,6 +118,54 @@ app.get('/api/check-payment/:id', async (req, res) => {
     }
 });
 
+// Webhook automático do Mercado Pago para entrega instantânea
+app.post('/api/webhook-mercadopago', async (req, res) => {
+    try {
+        const body = req.body;
+        
+        if (body.type === 'payment' || (body.action && body.action.includes('payment'))) {
+            const paymentId = body.data?.id || body.id;
+            
+            if (paymentId) {
+                const paymentInfo = await axios.get(`https://api.mercadopago.com/v1/payments/${paymentId}`, {
+                    headers: { 'Authorization': `Bearer ${MERCADO_PAGO_ACCESS_TOKEN}` }
+                });
+
+                const status = paymentInfo.data.status;
+
+                if (status === 'approved') {
+                    const orderData = pendingOrders[paymentId];
+                    
+                    if (orderData) {
+                        const { userTelegramId, userUsername, items } = orderData;
+                        const listaSeries = items.map(i => `- ${i.titulo} (R$ ${i.preco})`).join('\n');
+
+                        // 1. Envia instruções de acesso para o CLIENTE no Telegram
+                        await axios.post(`https://api.telegram.org/bot${TELEGRAM_BOT_TOKEN}/sendMessage`, {
+                            chat_id: userTelegramId,
+                            text: `🎉 **Pagamento Aprovado com Sucesso!**\n\nAqui estão os itens do seu pedido:\n\n${listaSeries}\n\n👉 Suas instruções de acesso e episódios foram liberados. Obrigado por comprar conosco!`
+                        });
+
+                        // 2. Envia notificação no PV do VENDEDOR
+                        if (SELLER_CHAT_ID) {
+                            await axios.post(`https://api.telegram.org/bot${TELEGRAM_BOT_TOKEN}/sendMessage`, {
+                                chat_id: SELLER_CHAT_ID,
+                                text: `🔔 **Nova Venda Aprovada (Automática)!**\n\n👤 Cliente: @${userUsername || 'Sem username'} (ID: ${userTelegramId})\n\n📺 **Séries escolhidas:**\n${listaSeries}\n\n💰 Valor pago: R$ ${paymentInfo.data.transaction_amount}`
+                            });
+                        }
+
+                        delete pendingOrders[paymentId];
+                    }
+                }
+            }
+        }
+        res.status(200).send('OK');
+    } catch (error) {
+        console.error('Erro no webhook do Mercado Pago:', error.message);
+        res.status(200).send('OK');
+    }
+});
+
 app.post('/api/telegram-webhook', async (req, res) => {
     try {
         const update = req.body;
