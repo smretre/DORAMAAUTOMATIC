@@ -66,8 +66,13 @@ app.post('/api/checkout-pix', async (req, res) => {
     }
 });
 
-// Função centralizada para enviar entregas e notificações no Telegram
+// Objeto para evitar envio duplicado de notificações
+const processedPayments = new Set();
+
 async function processarAprovacaoPagamento(paymentId, paymentInfo) {
+    // Evita duplicar notificações caso a tela e o webhook acionem juntos
+    if (processedPayments.has(paymentId)) return;
+
     let orderData = pendingOrders[paymentId];
 
     if (!orderData && paymentInfo.data.external_reference) {
@@ -77,20 +82,53 @@ async function processarAprovacaoPagamento(paymentId, paymentInfo) {
     }
 
     if (orderData && orderData.userTelegramId) {
-        const { userTelegramId, userUsername, items } = orderData;
-        const listaSeries = items.map(i => `- ${i.titulo} (R$ ${i.preco})`).join('\n');
+        processedPayments.add(paymentId);
 
-        // 1. Envia instruções de acesso para o CLIENTE
+        const { userTelegramId, userUsername, items } = orderData;
+        const listaSeries = items.map(i => `• *${i.titulo}*`).join('\n');
+
+        // 1. Mensagem CLARA e ORIENTATIVA para o CLIENTE
+        const mensagemCliente = 
+`🎉 *Pagamento Aprovado com Sucesso!*
+
+📺 *Item(ns) solicitado(s):*
+${listaSeries}
+
+⏳ *COMO VOCÊ IRÁ RECEBER:*
+O nosso atendimento é humano e personalizado! O administrador já foi notificado e irá enviar os episódios/links de acesso *diretamente aqui neste chat* em alguns minutos.
+
+💬 *PRECISA DE AJUDA OU DÚVIDAS?*
+Se precisar de suporte imediato, pode chamar o administrador no privado: @Stikdark
+
+Por favor, aguarde só um instante que o seu conteúdo já está a caminho! 🍿🚀`;
+
         await axios.post(`https://api.telegram.org/bot${TELEGRAM_BOT_TOKEN}/sendMessage`, {
             chat_id: userTelegramId,
-            text: `🎉 **Pagamento Aprovado com Sucesso!**\n\nAqui estão os itens do seu pedido:\n\n${listaSeries}\n\n👉 Suas instruções de acesso e episódios foram liberados. Obrigado por comprar conosco!`
+            text: mensagemCliente,
+            parse_mode: 'Markdown'
         });
 
-        // 2. Envia notificação no PV do VENDEDOR
+        // 2. Notificação Completa para o VENDEDOR (Você)
         if (SELLER_CHAT_ID) {
+            const clienteLink = userUsername ? `@${userUsername}` : `[Clique aqui para abrir o chat](tg://user?id=${userTelegramId})`;
+            
+            const mensagemVendedor = 
+`🔔 *NOVA VENDA APROVADA!*
+
+👤 *Cliente:* ${clienteLink}
+🆔 *ID Telegram:* \`${userTelegramId}\`
+
+📺 *Série(s) escolhida(s):*
+${listaSeries}
+
+💰 *Valor Pago:* R$ ${paymentInfo.data.transaction_amount}
+
+👉 *Ação necessária:* Envie o acesso para o cliente acima!`;
+
             await axios.post(`https://api.telegram.org/bot${TELEGRAM_BOT_TOKEN}/sendMessage`, {
                 chat_id: SELLER_CHAT_ID,
-                text: `🔔 **Nova Venda Aprovada!**\n\n👤 Cliente: @${userUsername || 'Sem username'} (ID: ${userTelegramId})\n\n📺 **Séries escolhidas:**\n${listaSeries}\n\n💰 Valor pago: R$ ${paymentInfo.data.transaction_amount}`
+                text: mensagemVendedor,
+                parse_mode: 'Markdown'
             });
         }
 
