@@ -106,9 +106,12 @@ async function processarAprovacaoPagamento(paymentId, paymentInfo) {
 
     let orderData = pendingOrders[paymentId];
 
-    if (!orderData && paymentInfo.data.external_reference) {
+        if (!orderData && paymentInfo.data.external_reference) {
         try {
-            orderData = JSON.parse(paymentInfo.data.external_reference);
+            const extRef = JSON.parse(paymentInfo.data.external_reference);
+            if (extRef.id) {
+                orderData = pendingOrders[extRef.id];
+            }
         } catch (e) {}
     }
 
