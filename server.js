@@ -23,28 +23,41 @@ app.post('/api/checkout-pix', async (req, res) => {
             return res.status(400).json({ error: 'Carrinho vazio' });
         }
 
-        // Lógica de Desconto Progressivo (1ª série normal, 2ª -R$1, 3ª -R$2...)
-        let subtotal = items.reduce((acc, item) => acc + Number(item.preco.replace(',', '.')), 0);
+        // 1. Sanitização rigorosa do preço
+        const parsePreco = (val) => {
+            if (!val) return 5.00;
+            let num = parseFloat(String(val).replace(/[^\d.,]/g, '').replace(',', '.'));
+            return isNaN(num) || num <= 0 ? 5.00 : num;
+        };
+
+        let subtotal = items.reduce((acc, item) => acc + parsePreco(item.preco), 0);
         let desconto = Math.max(0, items.length - 1); 
         let totalFinal = Math.max(1, subtotal - desconto); 
 
-        // Gera uma chave 100% ÚNICA por tentativa de compra para o Mercado Pago aceitar compras seguidas do mesmo usuário
+        // 2. Chave e e-mail únicos por tentativa
         const transactionUniqueId = `${userTelegramId}_${Date.now()}_${Math.floor(Math.random() * 1000)}`;
         const orderKey = `order_${transactionUniqueId}`;
 
-        const metadata = { userTelegramId, userUsername, items };
+        // 3. Limpeza dos títulos para evitar caracteres inválidos no Mercado Pago
+        const titulosLimpos = items.map(i => i.titulo ? i.titulo.replace(/[^\w\s-]/gi, '') : 'Serie').join(', ');
+        const descricaoCurta = `DORAMAX: ${titulosLimpos}`.substring(0, 100);
+
+        // Metadados enxutos
+        const itemsResumidos = items.map(i => ({ titulo: i.titulo, preco: i.preco }));
+        const metadata = { userTelegramId, userUsername, items: itemsResumidos };
 
         const paymentData = {
             transaction_amount: Number(totalFinal.toFixed(2)),
-            description: `Pacote com ${items.length} Série(s) - DORAMAX`,
+            description: descricaoCurta,
             payment_method_id: 'pix',
             payer: {
-                // E-mail único por transação para liberar compras consecutivas
-                email: `usuario_${transactionUniqueId}@telegram.com`,
-                first_name: userUsername || 'Cliente'
+                email: `user_${transactionUniqueId}@telegram.com`,
+                first_name: String(userUsername || 'Cliente').substring(0, 30)
             },
             external_reference: JSON.stringify(metadata)
         };
+
+        console.log("--> Enviando para o Mercado Pago:", JSON.stringify(paymentData));
 
         const mpResponse = await axios.post('https://api.mercadopago.com/v1/payments', paymentData, {
             headers: {
@@ -69,8 +82,12 @@ app.post('/api/checkout-pix', async (req, res) => {
         });
 
     } catch (error) {
-        console.error('Erro ao gerar Pix:', error.response?.data || error.message);
-        res.status(500).json({ error: 'Erro ao gerar Pix no Mercado Pago' });
+        const mpError = error.response?.data;
+        console.error('❌ ERRO DETALHADO DO MERCADO PAGO:', JSON.stringify(mpError || error.message));
+        
+        // Retorna o motivo exato para o navegador para sabermos na hora o que falhou
+        const detalheErro = mpError?.message || mpError?.cause?.[0]?.description || error.message;
+        res.status(500).json({ error: `Erro no Mercado Pago: ${detalheErro}` });
     }
 });
 
