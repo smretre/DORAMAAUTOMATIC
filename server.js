@@ -23,7 +23,7 @@ app.post('/api/checkout-pix', async (req, res) => {
             return res.status(400).json({ error: 'Carrinho vazio' });
         }
 
-        // Sanitização e conversão segura de preços
+        // Sanitização e conversão segura dos preços
         const parsePreco = (val) => {
             if (!val) return 5.00;
             let num = parseFloat(String(val).replace(/[^\d.,]/g, '').replace(',', '.'));
@@ -34,36 +34,34 @@ app.post('/api/checkout-pix', async (req, res) => {
         let desconto = Math.max(0, items.length - 1); 
         let totalFinal = Math.max(1, subtotal - desconto); 
 
-        // Identificador único por transação
-        const transactionUniqueId = `${userTelegramId}_${Date.now()}_${Math.floor(Math.random() * 1000)}`;
-        const orderKey = `order_${transactionUniqueId}`;
+        // Gera IDs curtos e únicos por transação
+        const transactionUniqueId = `${userTelegramId}_${Date.now()}`;
+        const orderKey = `order_${transactionUniqueId}_${Math.floor(Math.random() * 1000)}`;
 
-        // Descrição curta e fixa para NUNCA estourar o limite de caracteres do Mercado Pago
+        // Descrição curta fixa para a fatura do cliente
         const descricaoFixa = items.length === 1 
-            ? `Série: ${String(items[0].titulo).replace(/[^\w\s-]/gi, '').substring(0, 50)}`
+            ? `Série: ${String(items[0].titulo).substring(0, 30)}`
             : `Combo com ${items.length} séries - DORAMAX`;
 
-        // Salva uma cópia limpa dos itens para a notificação
-        const itemsResumidos = items.map(i => ({ 
-            titulo: String(i.titulo || 'Série').substring(0, 60), 
-            preco: parsePreco(i.preco).toFixed(2) 
-        }));
-
+        // Salva os dados completos na memória do Node.js (sem limite de tamanho)
         const metadata = { 
             userTelegramId, 
             userUsername, 
-            items: itemsResumidos 
+            items: items.map(i => ({ titulo: i.titulo, preco: parsePreco(i.preco).toFixed(2) })) 
         };
+
+        // external_reference ULTRA CURTO (apenas o ID da transação) para nunca estourar o limite de 256 caracteres
+        const externalReferenceCurto = JSON.stringify({ id: transactionUniqueId });
 
         const paymentData = {
             transaction_amount: Number(totalFinal.toFixed(2)),
             description: descricaoFixa,
             payment_method_id: 'pix',
             payer: {
-                email: `user_${transactionUniqueId}@telegram.com`,
-                first_name: String(userUsername || 'Cliente').substring(0, 30)
+                email: `u_${transactionUniqueId}@telegram.com`,
+                first_name: String(userUsername || 'Cliente').substring(0, 20)
             },
-            external_reference: JSON.stringify(metadata)
+            external_reference: externalReferenceCurto
         };
 
         const mpResponse = await axios.post('https://api.mercadopago.com/v1/payments', paymentData, {
@@ -75,7 +73,10 @@ app.post('/api/checkout-pix', async (req, res) => {
         });
 
         const paymentId = mpResponse.data.id;
+        
+        // Associa o ID real do Mercado Pago e o ID temporário aos dados do pedido
         pendingOrders[paymentId] = metadata;
+        pendingOrders[transactionUniqueId] = metadata;
 
         const pointOfInteraction = mpResponse.data.point_of_interaction;
         const qrCodeBase64 = pointOfInteraction?.transaction_data?.qr_code_base64;
