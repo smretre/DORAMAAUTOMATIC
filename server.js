@@ -23,19 +23,24 @@ app.post('/api/checkout-pix', async (req, res) => {
             return res.status(400).json({ error: 'Carrinho vazio' });
         }
 
+        // Lógica de Desconto Progressivo (1ª série normal, 2ª -R$1, 3ª -R$2...)
         let subtotal = items.reduce((acc, item) => acc + Number(item.preco.replace(',', '.')), 0);
         let desconto = Math.max(0, items.length - 1); 
         let totalFinal = Math.max(1, subtotal - desconto); 
 
+        // Gera uma chave 100% ÚNICA por tentativa de compra para o Mercado Pago aceitar compras seguidas do mesmo usuário
+        const transactionUniqueId = `${userTelegramId}_${Date.now()}_${Math.floor(Math.random() * 1000)}`;
+        const orderKey = `order_${transactionUniqueId}`;
+
         const metadata = { userTelegramId, userUsername, items };
-        const orderKey = `order_${userTelegramId}_${Date.now()}`;
 
         const paymentData = {
             transaction_amount: Number(totalFinal.toFixed(2)),
             description: `Pacote com ${items.length} Série(s) - DORAMAX`,
             payment_method_id: 'pix',
             payer: {
-                email: `usuario_${userTelegramId}@telegram.com`,
+                // E-mail único por transação para liberar compras consecutivas
+                email: `usuario_${transactionUniqueId}@telegram.com`,
                 first_name: userUsername || 'Cliente'
             },
             external_reference: JSON.stringify(metadata)
@@ -53,10 +58,13 @@ app.post('/api/checkout-pix', async (req, res) => {
         pendingOrders[paymentId] = metadata;
 
         const pointOfInteraction = mpResponse.data.point_of_interaction;
+        const qrCodeBase64 = pointOfInteraction?.transaction_data?.qr_code_base64;
+        const qrCodeCopyPaste = pointOfInteraction?.transaction_data?.qr_code;
+
         res.json({
             paymentId,
-            qrCodeBase64: pointOfInteraction?.transaction_data?.qr_code_base64,
-            qrCodeCopyPaste: pointOfInteraction?.transaction_data?.qr_code,
+            qrCodeBase64,
+            qrCodeCopyPaste,
             totalFinal: totalFinal.toFixed(2)
         });
 
