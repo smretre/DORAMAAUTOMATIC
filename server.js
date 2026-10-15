@@ -23,7 +23,7 @@ app.post('/api/checkout-pix', async (req, res) => {
             return res.status(400).json({ error: 'Carrinho vazio' });
         }
 
-        // 1. Sanitização rigorosa do preço
+        // Sanitização e conversão segura de preços
         const parsePreco = (val) => {
             if (!val) return 5.00;
             let num = parseFloat(String(val).replace(/[^\d.,]/g, '').replace(',', '.'));
@@ -34,21 +34,30 @@ app.post('/api/checkout-pix', async (req, res) => {
         let desconto = Math.max(0, items.length - 1); 
         let totalFinal = Math.max(1, subtotal - desconto); 
 
-        // 2. Chave e e-mail únicos por tentativa
+        // Identificador único por transação
         const transactionUniqueId = `${userTelegramId}_${Date.now()}_${Math.floor(Math.random() * 1000)}`;
         const orderKey = `order_${transactionUniqueId}`;
 
-        // 3. Limpeza dos títulos para evitar caracteres inválidos no Mercado Pago
-        const titulosLimpos = items.map(i => i.titulo ? i.titulo.replace(/[^\w\s-]/gi, '') : 'Serie').join(', ');
-        const descricaoCurta = `DORAMAX: ${titulosLimpos}`.substring(0, 100);
+        // Descrição curta e fixa para NUNCA estourar o limite de caracteres do Mercado Pago
+        const descricaoFixa = items.length === 1 
+            ? `Série: ${String(items[0].titulo).replace(/[^\w\s-]/gi, '').substring(0, 50)}`
+            : `Combo com ${items.length} séries - DORAMAX`;
 
-        // Metadados enxutos
-        const itemsResumidos = items.map(i => ({ titulo: i.titulo, preco: i.preco }));
-        const metadata = { userTelegramId, userUsername, items: itemsResumidos };
+        // Salva uma cópia limpa dos itens para a notificação
+        const itemsResumidos = items.map(i => ({ 
+            titulo: String(i.titulo || 'Série').substring(0, 60), 
+            preco: parsePreco(i.preco).toFixed(2) 
+        }));
+
+        const metadata = { 
+            userTelegramId, 
+            userUsername, 
+            items: itemsResumidos 
+        };
 
         const paymentData = {
             transaction_amount: Number(totalFinal.toFixed(2)),
-            description: descricaoCurta,
+            description: descricaoFixa,
             payment_method_id: 'pix',
             payer: {
                 email: `user_${transactionUniqueId}@telegram.com`,
@@ -56,8 +65,6 @@ app.post('/api/checkout-pix', async (req, res) => {
             },
             external_reference: JSON.stringify(metadata)
         };
-
-        console.log("--> Enviando para o Mercado Pago:", JSON.stringify(paymentData));
 
         const mpResponse = await axios.post('https://api.mercadopago.com/v1/payments', paymentData, {
             headers: {
@@ -84,8 +91,6 @@ app.post('/api/checkout-pix', async (req, res) => {
     } catch (error) {
         const mpError = error.response?.data;
         console.error('❌ ERRO DETALHADO DO MERCADO PAGO:', JSON.stringify(mpError || error.message));
-        
-        // Retorna o motivo exato para o navegador para sabermos na hora o que falhou
         const detalheErro = mpError?.message || mpError?.cause?.[0]?.description || error.message;
         res.status(500).json({ error: `Erro no Mercado Pago: ${detalheErro}` });
     }
