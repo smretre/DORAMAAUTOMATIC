@@ -210,31 +210,66 @@ app.post('/api/webhook-mercadopago', async (req, res) => {
     }
 });
 
-app.post('/api/telegram-webhook', async (req, res) => {
+//app.post('/api/telegram-webhook', async (req, res) => {
+    //try {
+        //const update = req.body;
+        //if (update.message && update.message.text) {
+            //const chatId = update.message.chat.id;
+            //const text = update.message.text;
+            //const firstName = update.message.from.first_name || 'Cliente';
+
+            //if (text.startsWith('/start')) {
+                //await axios.post(`https://api.telegram.org/bot${TELEGRAM_BOT_TOKEN}/sendMessage`, {
+                    //chat_id: chatId,
+                    //text: `Olá ${firstName} 👋! Seja muito bem-vindo(a) ao nosso app.\n\n👇 Toque no botão abaixo para abrir o catálogo e aproveitar nossos lançamentos!`,
+                    //reply_markup: {
+                        //inline_keyboard: [
+                            //[{ text: "🎬 APP-DORAMAX", web_app: { url: APP_URL } }]
+                        //]
+                    //}
+                //});
+            //}
+        //}
+        //res.status(200).send('OK');
+    //} catch (error) {
+        //res.status(500).send('Erro');
+    //}
+//});
+// Rota unificada para o Webhook do Telegram (funciona com ou sem o prefixo /api)
+const handleTelegramWebhook = async (req, res) => {
     try {
         const update = req.body;
-        if (update.message && update.message.text) {
+        if (update && update.message && update.message.text) {
             const chatId = update.message.chat.id;
             const text = update.message.text;
             const firstName = update.message.from.first_name || 'Cliente';
 
             if (text.startsWith('/start')) {
+                // Usa o domínio atual da Vercel ou localhost
+                const host = req.headers['x-forwarded-host'] || req.headers.host;
+                const protocol = req.headers['x-forwarded-proto'] || 'https';
+                const appDomain = `${protocol}://${host}`;
+
                 await axios.post(`https://api.telegram.org/bot${TELEGRAM_BOT_TOKEN}/sendMessage`, {
                     chat_id: chatId,
                     text: `Olá ${firstName} 👋! Seja muito bem-vindo(a) ao nosso app.\n\n👇 Toque no botão abaixo para abrir o catálogo e aproveitar nossos lançamentos!`,
                     reply_markup: {
                         inline_keyboard: [
-                            [{ text: "🎬 APP-DORAMAX", web_app: { url: APP_URL } }]
+                            [{ text: "🎬 APP-DORAMAX", web_app: { url: appDomain } }]
                         ]
                     }
                 });
             }
         }
-        res.status(200).send('OK');
+        return res.status(200).send('OK');
     } catch (error) {
-        res.status(500).send('Erro');
+        console.error('Erro no webhook do Telegram:', error.response?.data || error.message);
+        return res.status(500).send('Erro');
     }
-});
+};
+
+app.post('/api/telegram-webhook', handleTelegramWebhook);
+app.post('/telegram-webhook', handleTelegramWebhook);
 
 //const PORT = process.env.PORT || 3000;
 //app.listen(PORT, async () => {
