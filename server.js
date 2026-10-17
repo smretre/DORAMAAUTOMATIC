@@ -236,13 +236,30 @@ app.post('/api/telegram-webhook', async (req, res) => {
     }
 });
 
+//const PORT = process.env.PORT || 3000;
+//app.listen(PORT, async () => {
+   // console.log(`Servidor rodando na porta ${PORT}`);
+    //if (process.env.RENDER_EXTERNAL_URL && TELEGRAM_BOT_TOKEN) {
+       // const webhookUrl = `${process.env.RENDER_EXTERNAL_URL}/api/telegram-webhook`;
+      //  try {
+        //    await axios.get(`https://api.telegram.org/bot${TELEGRAM_BOT_TOKEN}/setWebhook?url=${webhookUrl}`);
+     //   } catch (e) {}
+ //   }
+//});
 const PORT = process.env.PORT || 3000;
-app.listen(PORT, async () => {
-    console.log(`Servidor rodando na porta ${PORT}`);
-    if (process.env.RENDER_EXTERNAL_URL && TELEGRAM_BOT_TOKEN) {
-        const webhookUrl = `${process.env.RENDER_EXTERNAL_URL}/api/telegram-webhook`;
-        try {
-            await axios.get(`https://api.telegram.org/bot${TELEGRAM_BOT_TOKEN}/setWebhook?url=${webhookUrl}`);
-        } catch (e) {}
-    }
-});
+
+// Se estiver rodando localmente ou no Render, inicia o servidor normalmente
+if (process.env.NODE_ENV !== 'production' || process.env.RENDER_EXTERNAL_URL) {
+    app.listen(PORT, async () => {
+        console.log(`Servidor rodando na porta ${PORT}`);
+        if (process.env.RENDER_EXTERNAL_URL && TELEGRAM_BOT_TOKEN) {
+            const webhookUrl = `${process.env.RENDER_EXTERNAL_URL}/api/telegram-webhook`;
+            try {
+                await axios.get(`https://api.telegram.org/bot${TELEGRAM_BOT_TOKEN}/setWebhook?url=${webhookUrl}`);
+            } catch (e) {}
+        }
+    });
+}
+
+// Exporta o app para a Vercel processar as rotas corretamente
+module.exports = app;
