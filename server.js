@@ -10,7 +10,8 @@ app.use(express.static(path.join(__dirname, 'public')));
 const TELEGRAM_BOT_TOKEN = process.env.TELEGRAM_BOT_TOKEN;
 const MERCADO_PAGO_ACCESS_TOKEN = process.env.MERCADO_PAGO_ACCESS_TOKEN;
 const SELLER_CHAT_ID = process.env.SELLER_CHAT_ID;
-const APP_URL = process.env.RENDER_EXTERNAL_URL || `http://localhost:${process.env.PORT || 3000}`;
+//const APP_URL = process.env.RENDER_EXTERNAL_URL || `http://localhost:${process.env.PORT || 3000}`;
+const APP_URL = process.env.VERCEL_URL ? `https://${process.env.VERCEL_URL}` : (process.env.RENDER_EXTERNAL_URL || `http://localhost:${process.env.PORT || 3000}`);
 
 const pendingOrders = {};
 
