@@ -1050,24 +1050,53 @@
 
     // Pesquisa em Tempo Real
     const searchInput = document.getElementById('searchInput');
-    const nadaEncontrado = document.getElementById('nada-encontrado');
+    const mensagem = document.getElementById('nada-encontrado');
 
-    searchInput.addEventListener('input', () => {
-      const termo = searchInput.value.toLowerCase();
-      const cards = document.querySelectorAll('.card');
-      let encontrou = false;
+    function pesquisar() {
 
-      cards.forEach(card => {
-        const title = card.querySelector('.card-title').textContent.toLowerCase();
-        if (title.includes(termo)) {
-          card.style.display = 'flex';
-          encontrou = true;
-        } else {
-          card.style.display = 'none';
+        const termo = searchInput.value.toLowerCase();
+        const cards = document.querySelectorAll('.card');
+
+        let encontrou = false;
+
+        cards.forEach(card => {
+
+            const title = card.querySelector('.card-title')
+                .textContent
+                .toLowerCase();
+
+            if (title.includes(termo)) {
+                card.style.display = 'block';
+                encontrou = true;
+            } else {
+                card.style.display = 'none';
+            }
+        });
+
+        mensagem.style.display = encontrou ? 'none' : 'block';
+    }
+
+// pesquisa enquanto digita
+    searchInput.addEventListener('input', pesquisar);
+
+// enter
+    searchInput.addEventListener('keydown', function(e) {
+
+        if (e.key === 'Enter') {
+
+            e.preventDefault();
+
+            pesquisar();
+
+            const catalogo = document.getElementById('catalogo');
+
+            window.scrollTo({
+                top: catalogo.offsetTop + 200,
+                behavior: 'smooth'
+            });
+
+            this.blur();
         }
-      });
-
-      nadaEncontrado.style.display = encontrou ? 'none' : 'block';
     });
 
     // Inicialização
