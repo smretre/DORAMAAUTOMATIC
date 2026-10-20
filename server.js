@@ -262,6 +262,50 @@ const handleTelegramWebhook = async (req, res) => {
                 });
             }
         }
+                    // Comando para COPIAR e enviar qualquer conteúdo (Vídeo, Foto com Legenda, Capa, etc.) para o cliente pelo ID
+            // Como usar: Responda à mensagem/vídeo da série e digite: /enviarmidia ID_CLIENTE
+            if (text.startsWith('/envmid') || text.startsWith('/fwd')) {
+                if (String(chatId) !== String(SELLER_CHAT_ID)) {
+                    return res.status(200).send('OK');
+                }
+
+                const partes = text.split(' ');
+                const targetId = partes[1];
+                const replyToMessageId = update.message.reply_to_message?.message_id;
+
+                if (!targetId || !replyToMessageId) {
+                    await axios.post(`https://api.telegram.org/bot${TELEGRAM_BOT_TOKEN}/sendMessage`, {
+                        chat_id: chatId,
+                        text: `⚠️ *Como usar:*\nResponda à mensagem da capa ou do vídeo da série e digite:\n\`/envmid ID_CLIENTE\`\n\n*Exemplo:* \`/envmid 8761705656\``,
+                        parse_mode: 'Markdown'
+                    });
+                    return res.status(200).send('OK');
+                }
+
+                try {
+                    // Usa copyMessage para duplicar a mídias/legenda exatamente igual sem tarja de reencaminhado
+                    await axios.post(`https://api.telegram.org/bot${TELEGRAM_BOT_TOKEN}/copyMessage`, {
+                        chat_id: targetId,
+                        from_chat_id: chatId,
+                        message_id: replyToMessageId
+                    });
+
+                    await axios.post(`https://api.telegram.org/bot${TELEGRAM_BOT_TOKEN}/sendMessage`, {
+                        chat_id: chatId,
+                        text: `✅ *Conteúdo enviado/copiado com sucesso para o cliente (${targetId})!*`,
+                        parse_mode: 'Markdown'
+                    });
+                } catch (err) {
+                    console.error('Erro ao copiar mensagem:', err.response?.data || err.message);
+                    await axios.post(`https://api.telegram.org/bot${TELEGRAM_BOT_TOKEN}/sendMessage`, {
+                        chat_id: chatId,
+                        text: `❌ *Erro ao enviar para o ID ${targetId}.*\nVerifique se o cliente já iniciou conversa com o bot.`,
+                        parse_mode: 'Markdown'
+                    });
+                }
+
+                return res.status(200).send('OK');
+            }
         return res.status(200).send('OK');
     } catch (error) {
         console.error('Erro no webhook do Telegram:', error.response?.data || error.message);
