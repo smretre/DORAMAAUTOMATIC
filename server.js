@@ -306,6 +306,34 @@ const handleTelegramWebhook = async (req, res) => {
 
                 return res.status(200).send('OK');
             }
+                    // Comando para abrir o chat de qualquer usuário pelo ID: /chat 8761705656
+            if (text.startsWith('/chat')) {
+                const parts = text.split(' ');
+                const targetId = parts[1];
+
+                if (targetId) {
+                    await axios.post(`https://api.telegram.org/bot${TELEGRAM_BOT_TOKEN}/sendMessage`, {
+                        chat_id: chatId,
+                        text: `🔗 Aceda ao chat do cliente ${targetId} através do botão abaixo:`,
+                        reply_markup: {
+                            inline_keyboard: [
+                                [
+                                    {
+                                        text: "💬 Abrir Conversa com Cliente",
+                                        url: `tg://openmessage?user_id=${targetId}`
+                                    }
+                                ]
+                            ]
+                        }
+                    });
+                } else {
+                    await axios.post(`https://api.telegram.org/bot${TELEGRAM_BOT_TOKEN}/sendMessage`, {
+                        chat_id: chatId,
+                        text: `⚠️ Por favor, informe o ID. Exemplo: /chat 8761705656`
+                    });
+                }
+                return res.status(200).send('OK');
+            }
         return res.status(200).send('OK');
     } catch (error) {
         console.error('Erro no webhook do Telegram:', error.response?.data || error.message);
