@@ -261,9 +261,8 @@ const handleTelegramWebhook = async (req, res) => {
                     }
                 });
             }
-        }
-                    // Comando para COPIAR e enviar qualquer conteúdo (Vídeo, Foto com Legenda, Capa, etc.) para o cliente pelo ID
-            // Como usar: Responda à mensagem/vídeo da série e digite: /enviarmidia ID_CLIENTE
+
+            // Comando para COPIAR e enviar qualquer conteúdo (Vídeo, Foto com Legenda, Capa, etc.) para o cliente pelo ID
             if (text.startsWith('/envmid') || text.startsWith('/fwd')) {
                 if (String(chatId) !== String(SELLER_CHAT_ID)) {
                     return res.status(200).send('OK');
@@ -283,7 +282,6 @@ const handleTelegramWebhook = async (req, res) => {
                 }
 
                 try {
-                    // Usa copyMessage para duplicar a mídias/legenda exatamente igual sem tarja de reencaminhado
                     await axios.post(`https://api.telegram.org/bot${TELEGRAM_BOT_TOKEN}/copyMessage`, {
                         chat_id: targetId,
                         from_chat_id: chatId,
@@ -306,7 +304,8 @@ const handleTelegramWebhook = async (req, res) => {
 
                 return res.status(200).send('OK');
             }
-                    // Comando para abrir o chat de qualquer usuário pelo ID: /chat 8761705656
+
+            // Comando para abrir o chat de qualquer usuário pelo ID: /chat 8761705656
             if (text.startsWith('/chat')) {
                 const parts = text.split(' ');
                 const targetId = parts[1];
@@ -334,6 +333,9 @@ const handleTelegramWebhook = async (req, res) => {
                 }
                 return res.status(200).send('OK');
             }
+
+        } // 👈 Chave de fecho do if(update && update.message && update.message.text) fica aqui no fim!
+
         return res.status(200).send('OK');
     } catch (error) {
         console.error('Erro no webhook do Telegram:', error.response?.data || error.message);
